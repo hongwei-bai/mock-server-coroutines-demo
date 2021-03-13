@@ -1,19 +1,33 @@
 package com.hongwei.controller
 
 import com.google.gson.Gson
-import com.hongwei.model.AccountHolderResponse
-import com.hongwei.model.AccountsResponse
-import com.hongwei.model.ContentResponse
-import com.hongwei.model.RateResponse
+import com.hongwei.model.*
+import com.hongwei.service.MockAccountService
+import com.hongwei.service.MockContentService
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
-import java.math.BigDecimal
 
 @Controller
 class DemoController {
+    companion object {
+        private const val ContentApiDelay = 7000L
+        private const val AccountsApiDelay = 200L
+        private const val HolderApiDelay = 1000L
+        private const val RateApiDelay = 3000L
+        private const val TypeApiDelay = 200L
+        private const val IsSaverAccountApiDelay = 2000L
+    }
+
+    @Autowired
+    private lateinit var accountService: MockAccountService
+
+    @Autowired
+    private lateinit var contentService: MockContentService
+
     @RequestMapping(path = ["/index.do", "/"])
     @ResponseBody
     fun index(): String {
@@ -22,21 +36,20 @@ class DemoController {
 
     @ResponseBody
     @RequestMapping(path = ["/content.do", "/"])
-    fun getInterestRateContent(): String =
-            Gson().toJson(ContentResponse("Your interest rate is {rate}%"))
+    fun getInterestRateContent(): String = Gson().toJson(ContentResponse(contentService.getContent()))
 
     @ResponseBody
     @RequestMapping(path = ["/content-slow.do", "/"])
     fun getInterestRateContentTimeout(): String {
-        Thread.sleep(4000)
-        return Gson().toJson(ContentResponse("Your interest rate is {rate}%"))
+        Thread.sleep(ContentApiDelay)
+        return Gson().toJson(ContentResponse(contentService.getContent()))
     }
 
     @ResponseBody
     @RequestMapping(path = ["/content-never.do", "/"])
     fun getInterestRateContentNever(): String {
         Thread.sleep(999999999999999999L)
-        return Gson().toJson(ContentResponse("Your interest rate is {rate}%"))
+        return Gson().toJson(ContentResponse(contentService.getContent()))
     }
 
     @ResponseBody
@@ -59,20 +72,20 @@ class DemoController {
     @ResponseBody
     @RequestMapping(path = ["/rate.do", "/"])
     fun getInterestRate(accountNumber: Long): String =
-            Gson().toJson(RateResponse(getRateByAccountNumber(accountNumber)))
+            Gson().toJson(RateResponse(accountService.getAccountRate(accountNumber)))
 
     @ResponseBody
     @RequestMapping(path = ["/rate-slow.do", "/"])
     fun getInterestRateTimeout(accountNumber: Long): String {
-        Thread.sleep(2000)
-        return Gson().toJson(RateResponse(getRateByAccountNumber(accountNumber)))
+        Thread.sleep(RateApiDelay)
+        return Gson().toJson(RateResponse(accountService.getAccountRate(accountNumber)))
     }
 
     @ResponseBody
     @RequestMapping(path = ["/rate-never.do", "/"])
     fun getInterestRateNever(accountNumber: Long): String {
         Thread.sleep(999999999999999999L)
-        return Gson().toJson(RateResponse(getRateByAccountNumber(accountNumber)))
+        return Gson().toJson(RateResponse(accountService.getAccountRate(accountNumber)))
     }
 
     @ResponseBody
@@ -94,42 +107,70 @@ class DemoController {
     @ResponseBody
     @RequestMapping(path = ["/accounts.do", "/"])
     fun getAccounts(): String {
-        return Gson().toJson(AccountsResponse(getAllAccountNumbers()))
+        return Gson().toJson(AccountsResponse(accountService.getAllAccounts()))
     }
 
     @ResponseBody
     @RequestMapping(path = ["/accounts-slow.do", "/"])
     fun getAccountsTimeout(): String {
-        Thread.sleep(1000)
-        return Gson().toJson(AccountsResponse(getAllAccountNumbers()))
+        Thread.sleep(AccountsApiDelay)
+        return Gson().toJson(AccountsResponse(accountService.getAllAccounts()))
     }
 
     @ResponseBody
     @RequestMapping(path = ["/accountholder.do", "/"])
     fun getAccountHolder(accountNumber: Long): String {
-        return Gson().toJson(AccountHolderResponse("Hongwei"))
+        accountService.getAccountHolderName(accountNumber)?.let { name ->
+            return Gson().toJson(AccountHolderResponse(name))
+        } ?: throw RequestDataNotFoundException
     }
 
     @ResponseBody
     @RequestMapping(path = ["/accountholder-slow.do", "/"])
     fun getAccountHolderTimeout(accountNumber: Long): String {
-        Thread.sleep(500)
-        return Gson().toJson(AccountHolderResponse("Hongwei"))
+        Thread.sleep(HolderApiDelay)
+        accountService.getAccountHolderName(accountNumber)?.let { name ->
+            return Gson().toJson(AccountHolderResponse(name))
+        } ?: throw RequestDataNotFoundException
     }
 
-    private fun getAllAccountNumbers(): List<Long> = listOf(
-            1234567890L,
-            1111222233L,
-            5454330044L
-    )
+    @ResponseBody
+    @RequestMapping(path = ["/accounttype.do", "/"])
+    fun getAccountType(accountNumber: Long): String {
+        accountService.getAccountType(accountNumber)?.let { name ->
+            return Gson().toJson(AccountHolderResponse(name))
+        } ?: throw RequestDataNotFoundException
+    }
 
-    private fun getRateByAccountNumber(accountNumber: Long): Double = when (accountNumber) {
-        1234567890L -> 14.40
-        1111222233L -> -12.50
-        5454330044L -> 500.00
-        else -> 0.00
+    @ResponseBody
+    @RequestMapping(path = ["/accounttype-slow.do", "/"])
+    fun getAccountTypeTimeout(accountNumber: Long): String {
+        Thread.sleep(TypeApiDelay)
+        accountService.getAccountType(accountNumber)?.let { name ->
+            return Gson().toJson(AccountHolderResponse(name))
+        } ?: throw RequestDataNotFoundException
+    }
+
+    @ResponseBody
+    @RequestMapping(path = ["/issaveraccount.do", "/"])
+    fun isSaverAccount(accountNumber: Long): String {
+        accountService.isSaverAccount(accountNumber)?.let { flag ->
+            return Gson().toJson(IsSaverAccountResponse(flag))
+        } ?: throw RequestDataNotFoundException
+    }
+
+    @ResponseBody
+    @RequestMapping(path = ["/issaveraccount-slow.do", "/"])
+    fun isSaverAccountTimeout(accountNumber: Long): String {
+        Thread.sleep(IsSaverAccountApiDelay)
+        accountService.isSaverAccount(accountNumber)?.let { flag ->
+            return Gson().toJson(IsSaverAccountResponse(flag))
+        } ?: throw RequestDataNotFoundException
     }
 
     @ResponseStatus(value = HttpStatus.I_AM_A_TEAPOT, reason = "I am a teapot, haha")
     object OrderNotFoundException : RuntimeException()
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Request data not found")
+    object RequestDataNotFoundException : RuntimeException()
 }
