@@ -65,7 +65,7 @@ class DemoController {
     @ResponseBody
     @RequestMapping(path = ["/content-failure.do", "/"])
     fun getInterestRateContentError(): String {
-        throw OrderNotFoundException
+        throw MockedException
     }
 
     //////////////////////////////
@@ -101,7 +101,7 @@ class DemoController {
     @ResponseBody
     @RequestMapping(path = ["/rate-failure.do", "/"])
     fun getInterestRateError(accountNumber: Long): String {
-        throw OrderNotFoundException
+        throw MockedException
     }
 
     @ResponseBody
@@ -169,7 +169,7 @@ class DemoController {
     }
 
     @ResponseStatus(value = HttpStatus.I_AM_A_TEAPOT, reason = "I am a teapot, haha")
-    object OrderNotFoundException : RuntimeException()
+    object MockedException : RuntimeException()
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Request data not found")
     object RequestDataNotFoundException : RuntimeException()
