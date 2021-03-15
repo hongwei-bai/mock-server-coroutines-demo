@@ -7,8 +7,8 @@
     <groupId>com.hongwei</groupId>
     <artifactId>mock-server-coroutines-demo</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
-<!--    <packaging>war</packaging>-->
+<!--    <packaging>jar</packaging>-->
+    <packaging>war</packaging>
     <name>mock-server-coroutines-demo</name>
     <description>mock-server-coroutines-demo</description>
 
